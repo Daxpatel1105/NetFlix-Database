@@ -1,0 +1,63 @@
+SQL Queries
+
+
+
+
+1.   Calculate profit from user in his recent membership.
+
+
+select *  from cal_profit_from_usr('userid');
+ 
+
+
+2.   Recommend some movies to the user.
+
+
+select movie_name  from recommend(‘userid’);
+
+
+3.  Give Trending movies.
+
+
+Select  *  from  show_trends();
+
+
+4.   Last viewed genre by user.
+
+
+Select * from recent_usr_genres(‘userid’);
+
+
+5 . Give name of  movies which is released in last 2 years having ‘Clark Gregg’ as actor and genre ‘Anime’.
+
+
+with x as(
+select * from movies natural join actsin_movie natural join actors where actor_name='Clark Gregg' and release_date>=now()-interval'2 years' )
+select movie_name from x natural join movie_genres natural join genres where gnr_name='Anime';
+
+
+
+
+6 .Name the Users  who has  watched netflix movies maximum no of hours uptil now.
+
+
+with x as
+(select userid,sum(no_of_hours) as hours_users from  movie_streams group by userid  )
+select fname,lname  from (select userid from x where hours_users=(select max(hours_users) from x)) as r1 natural join users;
+
+
+7.  Name the Users who  has complained the most.
+
+
+with x as(
+select userid,count(userid) as complain_most from complaint group by userid)
+select fname,lname  from (select userid from x where complain_most=(select max(complain_most) from x) ) as r1 natural join users;
+
+
+
+
+8 . Find the date where maximum transaction occured.
+
+
+   with x as (select payment_date,sum(amount) as sum1 from payments group by 1)
+  select payment_date from x where sum1=(select max(sum1) from x);
