@@ -1,0 +1,535 @@
+-- FUNCTION: netflix.cal_eqv_amt_paid(numeric)
+
+-- DROP FUNCTION netflix.cal_eqv_amt_paid(numeric);
+
+CREATE OR REPLACE FUNCTION netflix.cal_eqv_amt_paid(
+	usid numeric)
+    RETURNS real
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+-- This function calculates the total equivalent amount paid by the user till the time he watched his last movie. 
+--  For example if a user watches for total 5 hours in two days, and his membership is for 10 days, and if he has paid 100 rupees for 
+--  that membership, then equivalent amount paid by that user will be (2/10)*(100) rupees, for two days. 
+declare
+tp numeric;
+t1 date;
+t2 date;
+t3 date;
+tp1 numeric;
+tp2 numeric;
+amt numeric;
+begin
+
+	select start_date, renew_date into t1,t2
+	from cur_memberships natural join membership
+	where userid = usid;
+	
+	tp2 = extract (day from cast(t2 as timestamp) - cast(t1 as timestamp));
+	raise notice 'userid is %',usid;
+	if tp2 is NULL then
+		tp2 = 1; 
+	end if;
+	raise notice 'tp2 is %',tp2;
+	select into t3 max(date(date_time))
+	from movie_streams 
+	where userid = usid;
+	tp1 = extract (day from cast(t3 as timestamp) - cast(t1 as timestamp));
+	if tp1 is NULL then
+		tp1 = 0;
+	end if;
+	if( tp1 <0) then 
+		tp1 = 0;
+	end if;
+	raise notice 'tp1 is %',tp1;
+	
+	
+	select amount into amt 
+	from cur_memberships 
+	natural join payments 
+	where userid = usid;
+	if amt is NULL then
+		amt = 0;
+	end if;
+	raise notice 'amount is %',amt;
+	return (tp1/tp2)*amt;
+end
+$BODY$;
+
+
+
+
+
+-- FUNCTION: netflix.cal_profit_from_movie(numeric)
+
+-- DROP FUNCTION netflix.cal_profit_from_movie(numeric);
+
+CREATE OR REPLACE FUNCTION netflix.cal_profit_from_movie(
+	mvid numeric)
+    RETURNS real
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+declare
+tot_hours numeric;
+tot_cost real;
+stream_cost_per_hour numeric;
+tot_revenue real;
+r record;
+x numeric;
+y numeric;
+amt real;
+begin
+	select sum(no_of_hours) into tot_hours 
+	from movie_streams
+	where movieid = mvid;
+	
+	select cost_per_hour into stream_cost_per_hour from movies where movieid = mvid;
+	
+	tot_cost = tot_hours*stream_cost_per_hour;
+	tot_revenue = 0;
+	for r in select userid from movie_streams where movieid = mvid
+	loop
+		x = cal_x(r.userid, mvid);
+		y = cal_y(r.userid);
+		amt = cal_eqv_amt_paid(r.userid);
+		if x is null then 
+			x = 0;
+		end if;
+		if y is null then y=1; end if;
+		if amt is null then amt = 0; end if;
+-- 		raise notice 'x is %',x;
+-- 		raise notice 'y is%',y;
+-- 		raise notice 'amt is %',amt;
+		tot_revenue = tot_revenue + ((x*amt)/y);
+-- 		raise notice 'tot_revenue is %',tot_revenue;
+	end loop;
+ 	return tot_revenue - tot_cost;
+end;
+$BODY$;
+
+
+
+
+
+
+-- FUNCTION: netflix.cal_profit_from_usr(numeric)
+
+-- DROP FUNCTION netflix.cal_profit_from_usr(numeric);
+
+CREATE OR REPLACE FUNCTION netflix.cal_profit_from_usr(
+	usid numeric)
+    RETURNS real
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$ 
+declare 
+amt_paid real; 
+amt_costed numeric :=0;
+r record;
+t1 numeric;
+begin
+	amt_paid = cal_eqv_amt_paid(usid);
+	for r in select movieid, cost_per_hour from movies
+		loop
+			t1 = cal_x(usid, r.movieid);
+			if(t1 > 0) then 
+				amt_costed = amt_costed + t1*r.cost_per_hour;
+				raise notice 't1 is %',t1;
+			end if;
+			raise notice 'amt costed is %', amt_costed;
+		end loop;
+		raise notice '%',amt_paid - amt_costed;
+	return (amt_paid - amt_costed); 
+end;
+$BODY$;
+
+-- FUNCTION: netflix.cal_x(numeric, numeric)
+
+-- DROP FUNCTION netflix.cal_x(numeric, numeric);
+
+CREATE OR REPLACE FUNCTION netflix.cal_x(
+	usid numeric,
+	mvid numeric)
+    RETURNS integer
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+declare 
+tp numeric := 0;
+begin
+	select no_of_hours into tp from 
+	movie_streams
+	where userid = usid
+	and movieid = mvid;
+	if(tp = NULL) then
+		tp =0;
+	end if;
+	return tp;
+end
+$BODY$;
+
+-- FUNCTION: netflix.cal_y(numeric)
+
+-- DROP FUNCTION netflix.cal_y(numeric);
+
+CREATE OR REPLACE FUNCTION netflix.cal_y(
+	usid numeric)
+    RETURNS integer
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+declare
+tp numeric;
+begin
+	select sum(no_of_hours) into tp
+	from movie_streams
+	where userid = usid;
+	if(tp = NULL) then 
+		tp = 0;
+	end if;
+	return tp;
+end;
+$BODY$;
+
+-- FUNCTION: netflix.extend_membership(numeric, numeric, numeric)
+
+-- DROP FUNCTION netflix.extend_membership(numeric, numeric, numeric);
+
+CREATE OR REPLACE FUNCTION netflix.extend_membership(
+	usid numeric,
+	plid numeric,
+	dur numeric)
+    RETURNS integer
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+declare
+pid  numeric;
+mid numeric;
+max_mid numeric;
+st_dt date;
+rn_dt date;
+mp numeric;
+pyid numeric;
+begin
+	select membershipid into mid from users where userid = usid;
+	select max(paymentid) into pyid from payments;
+	if(validate_membership(usid)= true) then 
+		select planid into pid from users where userid = usid;
+		select monthly_rate into mp from plan where planid = plid;
+		insert into payments values(pyid + 1, date(now()), 'PayTM', mp*dur, usid);
+		if(plid = pid) then
+			update membership
+			set renew_date = renew_date + interval'1 month'*dur,
+			paymentid = pyid + 1
+			where membershipid = mid;
+		else
+			select max(membershipid) into max_mid from membership;
+			select renew_date into st_dt from membership where membershipid = mid;
+			rn_dt = st_dt + interval'1 month'*dur;
+			select monthly_rate into mp from plan where planid = plid;
+			insert into payments values(pyid + 1, date(now()), 'PayTM', mp*dur, usid);
+			insert into membership values(max_mid +1,st_dt, rn_dt, mp, pyid + 1);
+		end if;
+	else 
+		select max(membershipid) into max_mid from membership;
+		st_dt = date(now());
+		rn_dt = st_dt + interval'1 month'*dur;
+		select monthly_rate into mp from plans where planid = plid;
+		insert into payments values(pyid + 1, date(now()), 'PayTM', mp*dur, usid);
+		insert into membership values(max_mid +1,st_dt, rn_dt, mp, pyid + 1);
+		
+	end if;
+	return pyid + 1;
+end;
+$BODY$;
+
+-- FUNCTION: netflix.recommend(numeric)
+
+-- DROP FUNCTION netflix.recommend(numeric);
+
+CREATE OR REPLACE FUNCTION netflix.recommend(
+	usid numeric)
+    RETURNS SETOF integer 
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+
+declare
+gid numeric;
+mid numeric;
+cur1 cursor(usid numeric) is with x as(
+								select movieid from movie_streams  
+								where userid = usid
+								order by(date_time)
+								limit 3
+								)
+								select genreid, movieid from  x 
+								natural join movie_genres
+								limit 3;
+cur2 cursor(gnid numeric, mvid numeric) is select movieid 
+												from movies
+												natural join movie_genres 
+												where movieid != mvid
+												and genreid = gnid
+												order by(movie_views) desc
+												limit 2;
+-- rec_mid numeric;
+-- rec mname numeric;
+r integer;
+begin
+	open cur1(usid);
+	loop
+		fetch cur1 into gid, mid;
+		exit when not found;
+		open cur2(gid, mid);
+		loop	
+			fetch cur2 into r;
+			exit when not found;
+			return next r;
+		end loop;
+		close cur2;
+	end loop;
+	close cur1;
+	return;
+end;
+$BODY$;
+
+-- FUNCTION: netflix.show_trends(numeric, date)
+
+-- DROP FUNCTION netflix.show_trends(numeric, date);
+
+CREATE OR REPLACE FUNCTION netflix.show_trends(
+	lmt numeric,
+	dt date DEFAULT date(
+	now(
+	)))
+    RETURNS SETOF integer 
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+declare
+r integer;
+begin
+	for r in 
+			select movieid from
+			movie_streams 
+			natural join movies
+			where date(date_time) >= dt-1
+			and date(date_time) <= dt
+			group by(movieid)
+			order by(count(*)) desc
+			limit lmt
+		loop
+			return next r;
+		end loop;
+		return;
+end;
+$BODY$;
+
+-- FUNCTION: netflix.recent_usr_genres(numeric, numeric)
+
+-- DROP FUNCTION netflix.recent_usr_genres(numeric, numeric);
+
+CREATE OR REPLACE FUNCTION netflix.recent_usr_genres(
+	usid numeric,
+	lmt numeric DEFAULT 2)
+    RETURNS SETOF integer 
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+declare
+r integer;
+begin
+	for r in 
+		with x as(
+		select movieid from movie_streams  
+		where userid = usid
+		order by(date_time)
+		limit lmt
+		)
+		select genreid from  x 
+		natural join movie_genres
+		limit lmt
+	loop 
+		return next r;
+	end loop;
+	return;
+end;
+$BODY$;
+
+-- FUNCTION: netflix.register_membership(numeric, date, character varying, numeric, numeric, numeric)
+
+-- DROP FUNCTION netflix.register_membership(numeric, date, character varying, numeric, numeric, numeric);
+
+CREATE OR REPLACE FUNCTION netflix.register_membership(
+	usid numeric,
+	st_dt date,
+	mop character varying,
+	amt numeric,
+	plid numeric,
+	dur numeric)
+    RETURNS integer
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+declare
+pid numeric;
+mid numeric;
+ren_dt date;
+mon_price numeric;
+begin
+	select max(paymentid) into pid from payments;
+	pid = pid + 1;
+	select monthly_rate into mon_price from plan where planid = plid;
+	select max(membershipid) into mid from membership;
+	mid = mid + 1;
+	insert into payments(paymentid, payment_date, mode_of_payment, amount, userid)
+	values(pid, st_dt, mop, amt, usid);
+	ren_dt = st_dt + interval '1 month'*dur;
+	insert into membership(membershipid, start_date, renew_date, monthly_price, paymentid)
+	values(mid, st_dt, ren_dt, mon_price, pid);
+	
+	update users 
+	set planid = plid
+	where userid = usid;
+	update users 
+	set membershipid = mid
+	where userid = usid;
+	
+	return pid;
+end;
+$BODY$;
+
+-- FUNCTION: netflix.uservalidation(numeric, character varying)
+
+-- DROP FUNCTION netflix.uservalidation(numeric, character varying);
+
+CREATE OR REPLACE FUNCTION netflix.uservalidation(
+	usid numeric,
+	passwd character varying)
+    RETURNS integer
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+declare
+r record;
+begin
+	for r in select * from users where userid = usid
+	loop
+		if(r.passwd = passwd) then
+			return 1;
+		else 
+			return 0;
+		end if;
+	end loop;
+end;
+$BODY$;
+
+
+-- FUNCTION: netflix.validate_membership(numeric)
+
+-- DROP FUNCTION netflix.validate_membership(numeric);
+
+CREATE OR REPLACE FUNCTION netflix.validate_membership(
+	usid numeric)
+    RETURNS boolean
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+declare
+mid numeric;
+rd date;
+begin
+	mid = 1000;
+	select membershipid into mid from users where userid = usid;
+	if(mid = 0) then 
+		return false;
+	end if;
+	
+	select renew_date into rd from users natural join membership where userid = usid;
+	if(rd >= date(now())) then 
+		return true;
+	else 
+		return false;
+	end if;
+end;
+$BODY$;
+
+-- FUNCTION: netflix.watch_movie(numeric, numeric, timestamp without time zone, numeric, time without time zone)
+
+-- DROP FUNCTION netflix.watch_movie(numeric, numeric, timestamp without time zone, numeric, time without time zone);
+
+CREATE OR REPLACE FUNCTION netflix.watch_movie(
+	usid numeric,
+	mvid numeric,
+	dt timestamp without time zone,
+	noh numeric,
+	mts time without time zone)
+    RETURNS integer
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+declare
+tp integer;
+begin
+	select movieid into tp from movie_streams
+	where movieid =  mvid
+	and userid = usid;
+	if(tp = NULL) then 
+		insert into movieid(userid, movieid, date_time, no_of_hours, movie_timestamp)
+				values(usid, mvid, dt, noh, mts);
+	else 
+		update movie_streams
+		set date_time =  dt,
+			no_of_hours = no_of_hours + noh,
+			movie_timestamp = mts
+		where userid = usid
+		and movieid = mid;
+	end if;
+end;
+$BODY$;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
