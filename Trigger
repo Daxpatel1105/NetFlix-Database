@@ -1,0 +1,95 @@
+-- FUNCTION: netflix.rate_movie()
+
+-- DROP FUNCTION netflix.rate_movie();
+
+CREATE FUNCTION netflix.rate_movie()
+    RETURNS trigger
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE NOT LEAKPROOF
+AS $BODY$
+declare
+
+begin
+	
+	if(TG_OP = 'INSERT') then 
+		update movies
+		set avg_rating = (avg_ratings*no_of_ratings + NEW.rating)/(no_of_ratings + 1);
+		update movies
+		set no_of_ratings = no_of_ratings + 1;
+	end if;
+
+end;
+$BODY$;
+
+-- FUNCTION: netflix.update_tv_views()
+
+-- DROP FUNCTION netflix.update_tv_views();
+
+CREATE FUNCTION netflix.update_tv_views()
+    RETURNS trigger
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE NOT LEAKPROOF
+AS $BODY$
+declare 
+
+begin
+
+	if(TG_OP = 'INSERT') then 
+		update netflix.contents
+		set ep_views = ep_views + 1
+		where showid = NEW.showid
+		and season_no = NEW.season_no
+		and episode_no = NEW.episode_no;
+		return NEW;
+	end if;
+	
+	if (TG_OP = 'UPDATE') then 
+		update netflix.contents
+		set ep_views = ep_views + 1
+		where showid = NEW.showid
+		and season_no = NEW.season_no
+		and episode_no = NEW.episode_no;
+		return NEW;
+	end if;
+	return NULL;
+end;
+$BODY$;
+
+-- FUNCTION: netflix.update_views()
+
+-- DROP FUNCTION netflix.update_views();
+
+CREATE FUNCTION netflix.update_views()
+    RETURNS trigger
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE NOT LEAKPROOF
+AS $BODY$
+declare 
+
+begin
+
+	if(TG_OP = 'INSERT') then 
+		update movies
+		set movie_views = movie_views + 1
+		where movieid = NEW.movieid;
+		return NEW;
+	end if;
+	
+	if(TG_OP = 'UPDATE') then 
+		update movies
+		set movie_views = movie_views + 1
+		where movieid = NEW.movieid;
+		return NEW;
+	end if;
+	return NULL;
+end;
+$BODY$;
+
+
+
+
+
+
