@@ -1,0 +1,793 @@
+DDL script
+
+
+CREATE SCHEMA netflix
+
+
+CREATE TABLE movies(
+        movieID DECIMAL(9,0),
+        release_date DATE,
+        movie_name VARCHAR(30),
+        purchase_cost DECIMAL(9,0),
+        
+        PRIMARY KEY (movieID)
+);
+
+
+CREATE TABLE TVShows(
+        showID DECIMAL(9,0),
+        show_name VARCHAR(50),
+        start_date DATE,
+        end_date DATE,
+        
+        PRIMARY KEY (showID)
+);
+
+
+CREATE TABLE contents(
+        showID DECIMAL(9,0),
+        season_no SMALLINT,
+        episode_no SMALLINT,
+        episode_name VARCHAR(40),
+        release_date DATE,
+        
+        PRIMARY KEY (showID,season_no, episode_no),
+        FOREIGN KEY (showID) REFERENCES TVShows(showID)
+        ON DELETE SET DEFAULT ON UPDATE CASCADE
+);
+
+
+CREATE TABLE actors(
+        actorid DECIMAL(5,0),
+        actor_name VARCHAR(30),
+        age SMALLINT,
+        DOB DATE,
+        
+        PRIMARY KEY (actorid)
+);
+
+
+CREATE TABLE directors(
+        director_id DECIMAL(5,0),
+        dir_name VARCHAR(30),
+        
+        PRIMARY KEY (director_id)
+);
+
+
+CREATE TABLE genres(
+        genreID SMALLINT,
+        gnr_name VARCHAR(20),
+        
+        PRIMARY KEY (genreID)
+);
+
+
+CREATE TABLE employee(
+        employeeID DECIMAL(9,0),
+        ename VARCHAR(30),
+        eposition VARCHAR(30),
+        
+        PRIMARY KEY(employeeID)
+);
+
+
+CREATE TABLE complaint(
+        complaintid DECIMAL(9,0),
+        userID DECIMAL(9,0),
+        employeeID DECIMAL(9,0),
+        filed_on TIMESTAMP,
+        
+        PRIMARY KEY(complaintID),
+        FOREIGN KEY (userID) REFERENCES users(userID)
+        ON DELETE SET DEFAULT ON UPDATE CASCADE,
+        FOREIGN KEY (employeeID) REFERENCES employee(employeeID)
+        ON DELETE SET DEFAULT ON UPDATE CASCADE
+);
+
+
+CREATE TABLE rentals(
+        rentalID SMALLINT,
+        rental_type VARCHAR(30),
+        rate SMALLINT,
+        
+        PRIMARY KEY (rentalID)
+);
+
+
+CREATE TABLE inventory(
+        diskID DECIMAL(9,0),
+        availability BOOLEAN,
+        movieID DECIMAL(9,0),
+        
+        PRIMARY KEY (diskID),
+        FOREIGN KEY (movieID) REFERENCES movies(movieID)
+        ON DELETE SET DEFAULT ON UPDATE CASCADE
+);
+
+
+CREATE TABLE offers(
+        rentalID SMALLINT, 
+        diskID DECIMAL(9,0),
+        
+        PRIMARY KEY(rentalID, diskID),
+        FOREIGN KEY (rentalID) REFERENCES rentals(rentalID)
+        ON DELETE SET DEFAULT ON UPDATE CASCADE,
+        FOREIGN KEY (diskID) REFERENCES inventory(diskID)
+        ON DELETE SET DEFAULT ON UPDATE CASCADE
+);
+
+
+CREATE TABLE rental_log(
+        userID DECIMAL(9,0),
+        rentalID SMALLINT, 
+        diskID DECIMAL(9,0),
+        rental_date DATE,
+        due_date DATE,
+        paymentID DECIMAL(9,0),
+        
+        PRIMARY KEY (paymentID),
+        FOREIGN KEY (paymentID) REFERENCES payments(paymentID)
+        ON DELETE SET DEFAULT ON UPDATE CASCADE,
+        FOREIGN KEY (userID) REFERENCES users(userid)
+        ON DELETE SET DEFAULT ON UPDATE CASCADE,
+        FOREIGN KEY (rentalID, diskID) REFERENCES offers(rentalID, diskID)
+        ON DELETE SET DEFAULT ON UPDATE CASCADE
+);
+
+
+CREATE TABLE cards(
+        cardno DECIMAL(9,0),
+        exp_date DATE, 
+        card_type VARCHAR(30),
+        
+        PRIMARY KEY (cardno)
+);
+
+
+CREATE TABLE saved_cards(
+        userID DECIMAL(9,0),
+        cardno DECIMAL(9,0),
+        
+        PRIMARY KEY(userID, cardno),
+        FOREIGN KEY (userID) REFERENCES users(userID)
+        ON DELETE SET DEFAULT ON UPDATE CASCADE,
+        FOREIGN KEY (cardno) REFERENCES cards(cardno)
+        ON DELETE SET DEFAULT ON UPDATE CASCADE
+);
+
+
+CREATE TABLE peer_profiles(
+        userID DECIMAL(9,0),
+        peerID DECIMAL(9,0),
+        
+        PRIMARY KEY(userID, peerID),
+        FOREIGN KEY (userID) REFERENCES users(userID)
+        ON DELETE SET DEFAULT ON UPDATE CASCADE, 
+        FOREIGN KEY (peerID) REFERENCES users(userID)
+        ON DELETE SET DEFAULT ON UPDATE CASCADE
+);
+
+
+CREATE TABLE user_genres(
+        userID DECIMAL(9,0),
+        genreID SMALLINT,
+        
+        PRIMARY KEY(userID, genreID),
+        FOREIGN KEY (userID) REFERENCES users(userID)
+        ON DELETE SET DEFAULT ON UPDATE CASCADE, 
+        FOREIGN KEY (genreID) REFERENCES genres(genreID)
+        ON DELETE SET DEFAULT ON UPDATE CASCADE
+);
+
+
+CREATE TABLE movie_genres(
+        movieID DECIMAL(9,0),
+        genreID SMALLINT,
+        
+        PRIMARY KEY (movieID, genreID),
+        FOREIGN KEY (genreID) REFERENCES genres(genreID)
+        ON DELETE SET DEFAULT ON UPDATE CASCADE, 
+        FOREIGN KEY (movieID) REFERENCES movies(movieID)
+        ON DELETE SET DEFAULT ON UPDATE CASCADE
+);
+
+
+CREATE TABLE TVShow_genres(
+        showID DECIMAL(9,0),
+        genreID SMALLINT,
+        
+        PRIMARY KEY (showID, genreID),
+        FOREIGN KEY (genreID) REFERENCES genres(genreID)
+        ON DELETE SET DEFAULT ON UPDATE CASCADE, 
+        FOREIGN KEY (showID) REFERENCES TVShows(showID)
+        ON DELETE SET DEFAULT ON UPDATE CASCADE
+);
+
+
+CREATE TABLE actsin_movie(
+        actorID DECIMAL(9,0),
+        movieID DECIMAL(9,0),
+        act_role VARCHAR(20),
+        
+        PRIMARY KEY(actorID, movieID),
+        FOREIGN KEY (actorID) REFERENCES actors(actorID)
+        ON DELETE SET DEFAULT ON UPDATE CASCADE,
+        FOREIGN KEY (movieID) REFERENCES movies(movieID)
+        ON DELETE SET DEFAULT ON UPDATE CASCADE
+);
+
+
+CREATE TABLE actsin_tv(
+        actorID DECIMAL(9,0),
+        showID DECIMAL(9,0),
+        act_role VARCHAR(20),
+        
+        PRIMARY KEY(actorID, showID),
+        FOREIGN KEY (actorID) REFERENCES actors(actorID)
+        ON DELETE SET DEFAULT ON UPDATE CASCADE,
+        FOREIGN KEY (showID) REFERENCES TVShows(showID)
+        ON DELETE SET DEFAULT ON UPDATE CASCADE
+);
+
+
+Insert script 
+
+
+INSERT INTO netflix.actsin_movie VALUES (1, 1, 'Male leading actor');
+INSERT INTO netflix.actsin_movie VALUES (1, 21, 'Coactor');
+INSERT INTO netflix.actsin_movie VALUES (1, 14, 'Supporting Actor');
+INSERT INTO netflix.actsin_movie VALUES (1, 13, 'Supporting Actor');
+INSERT INTO netflix.actsin_movie VALUES (2, 9, 'Coactor');
+INSERT INTO netflix.actsin_movie VALUES (5, 7, 'Male leading actor');
+INSERT INTO netflix.actsin_movie VALUES (4, 5, 'Female leading actor');
+INSERT INTO netflix.actsin_movie VALUES (1, 8, 'Female leading actor');
+INSERT INTO netflix.actsin_movie VALUES (2, 13, 'Coactor');
+INSERT INTO netflix.actsin_movie VALUES (3, 12, 'Supporting Actor');
+INSERT INTO netflix.actsin_movie VALUES (6, 11, 'Female leading actor');
+INSERT INTO netflix.actsin_movie VALUES (7, 5, 'Female leading actor');
+INSERT INTO netflix.actsin_movie VALUES (4, 6, 'Supporting Actor');
+INSERT INTO netflix.actsin_movie VALUES (2, 7, 'Coactor');
+INSERT INTO netflix.actsin_movie VALUES (5, 1, 'Female leading actor');
+INSERT INTO netflix.actsin_movie VALUES (3, 5, 'Male leading actor');
+INSERT INTO netflix.actsin_movie VALUES (5, 4, 'Coactor');
+INSERT INTO netflix.actsin_movie VALUES (4, 1, 'Male leading actor');
+INSERT INTO netflix.actsin_movie VALUES (7, 2, 'Coactor');
+INSERT INTO netflix.actsin_movie VALUES (8, 4, 'Female leading actor');
+
+
+
+
+
+
+
+
+INSERT INTO netflix.actsin_tv VALUES (1, 1, 'Male leading role');
+INSERT INTO netflix.actsin_tv VALUES (2, 1, 'Coactors');
+INSERT INTO netflix.actsin_tv VALUES (3, 1, 'Coactors');
+INSERT INTO netflix.actsin_tv VALUES (4, 2, 'Male leading role');
+INSERT INTO netflix.actsin_tv VALUES (5, 2, 'Coactors');
+INSERT INTO netflix.actsin_tv VALUES (8, 2, 'Female Leading Role');
+INSERT INTO netflix.actsin_tv VALUES (7, 3, 'Male leading role');
+INSERT INTO netflix.actsin_tv VALUES (8, 3, 'Female Leading Role');
+INSERT INTO netflix.actsin_tv VALUES (9, 3, 'Female Leading Role');
+INSERT INTO netflix.actsin_tv VALUES (10, 3, 'Coactors');
+INSERT INTO netflix.actsin_tv VALUES (1, 4, 'Male leading role');
+INSERT INTO netflix.actsin_tv VALUES (2, 4, 'Coactors');
+INSERT INTO netflix.actsin_tv VALUES (3, 4, 'Coactors');
+INSERT INTO netflix.actsin_tv VALUES (2, 5, 'Male leading role');
+INSERT INTO netflix.actsin_tv VALUES (8, 5, 'Female Leading Role');
+INSERT INTO netflix.actsin_tv VALUES (6, 5, 'Coactors');
+INSERT INTO netflix.actsin_tv VALUES (6, 6, 'Male leading role');
+INSERT INTO netflix.actsin_tv VALUES (9, 6, 'Female Leading Role');
+INSERT INTO netflix.actsin_tv VALUES (3, 6, 'Coactors');
+
+
+
+
+
+
+
+
+INSERT INTO netflix.cards VALUES (519249659898, '2024-03-01', 'MasterCard');
+INSERT INTO netflix.cards VALUES (519249659902, '2024-03-01', 'MasterCard');
+INSERT INTO netflix.cards VALUES (519249659903, '2023-03-01', 'MasterCard');
+INSERT INTO netflix.cards VALUES (519249659904, '2024-03-11', 'Rupay');
+INSERT INTO netflix.cards VALUES (519249659905, '2024-04-01', 'Rupay');
+INSERT INTO netflix.cards VALUES (519249659906, '2021-03-01', 'Rupay');
+INSERT INTO netflix.cards VALUES (519249659897, '2024-11-01', 'Visa');
+INSERT INTO netflix.cards VALUES (519249659899, '2024-12-01', 'Rupay');
+INSERT INTO netflix.cards VALUES (519249659900, '2024-06-01', 'Visa');
+INSERT INTO netflix.cards VALUES (519249659901, '2024-07-01', 'Rupay');
+
+
+
+
+
+
+
+
+INSERT INTO netflix.complaint VALUES (123, 1, 1, '2019-11-16 00:00:00');
+INSERT INTO netflix.complaint VALUES (124, 2, 1, '2019-11-16 00:00:00');
+INSERT INTO netflix.complaint VALUES (125, 3, 1, '2019-11-16 00:00:00');
+INSERT INTO netflix.complaint VALUES (126, 4, 1, '2019-11-16 00:00:00');
+INSERT INTO netflix.complaint VALUES (127, 1, 1, '2019-11-16 00:00:00');
+INSERT INTO netflix.complaint VALUES (128, 1, 1, '2019-11-16 00:00:00');
+
+
+
+
+
+
+
+
+INSERT INTO netflix.contents VALUES (1, 1, 1, 'Lifesize Comic', '2000-12-02', 10, 0);
+INSERT INTO netflix.contents VALUES (1, 1, 2, 'Mortal Adventures', '2000-12-09', 10, 0);
+INSERT INTO netflix.contents VALUES (1, 1, 3, 'Disconnected Tales', '2000-12-24', 10, 0);
+INSERT INTO netflix.contents VALUES (1, 1, 4, 'Dog Chronicles', '2000-12-30', 10, 0);
+INSERT INTO netflix.contents VALUES (1, 1, 5, 'Dark Smiles', '2000-12-31', 10, 0);
+INSERT INTO netflix.contents VALUES (1, 2, 1, 'Weird Nonsense', '2002-12-15', 11, 0);
+INSERT INTO netflix.contents VALUES (1, 2, 2, 'Killing Paradox', '2002-12-21', 11, 0);
+INSERT INTO netflix.contents VALUES (1, 2, 3, 'Metalkey', '2002-12-28', 11, 0);
+INSERT INTO netflix.contents VALUES (1, 2, 4, 'Voidflake', '2002-12-29', 11, 0);
+INSERT INTO netflix.contents VALUES (1, 2, 5, 'Hallowworth', '2003-01-04', 11, 0);
+INSERT INTO netflix.contents VALUES (1, 3, 1, 'Sidekick Legend', '2004-04-17', 8, 0);
+INSERT INTO netflix.contents VALUES (1, 3, 2, 'Fellowship Comics', '2004-04-24', 8, 0);
+INSERT INTO netflix.contents VALUES (1, 3, 3, 'Sour Myths', '2004-05-08', 8, 0);
+INSERT INTO netflix.contents VALUES (1, 3, 4, 'Destined Chronicles', '2004-05-23', 8, 0);
+INSERT INTO netflix.contents VALUES (1, 3, 5, 'Silent Paradox', '2004-05-29', 8, 0);
+INSERT INTO netflix.contents VALUES (1, 3, 6, 'Frozen Genesis', '2004-06-05', 8, 0);
+INSERT INTO netflix.contents VALUES (1, 4, 1, 'Dragon Zombies', '2005-06-18', 13, 0);
+INSERT INTO netflix.contents VALUES (1, 4, 2, 'Birthderp', '2005-09-03', 13, 0);
+INSERT INTO netflix.contents VALUES (1, 4, 3, 'Bitterloop', '2005-10-16', 13, 0);
+INSERT INTO netflix.contents VALUES (1, 4, 4, 'Angelking', '2005-10-22', 13, 0);
+INSERT INTO netflix.contents VALUES (1, 4, 5, 'Iron Story', '2006-02-05', 13, 0);
+INSERT INTO netflix.contents VALUES (1, 5, 1, 'Derpy Tales', '2007-12-16', 12, 0);
+INSERT INTO netflix.contents VALUES (1, 5, 2, 'Yesterday''s Tales', '2007-12-22', 12, 0);
+INSERT INTO netflix.contents VALUES (1, 5, 3, 'Unlucky Chronicles', '2007-12-23', 12, 0);
+INSERT INTO netflix.contents VALUES (1, 5, 4, 'Fragile Guardian', '2007-12-30', 12, 0);
+INSERT INTO netflix.contents VALUES (1, 5, 5, 'Emotional Love', '2008-01-12', 12, 0);
+INSERT INTO netflix.contents VALUES (2, 1, 1, 'Stolen Requiem', '2015-12-20', 14, 0);
+INSERT INTO netflix.contents VALUES (2, 1, 2, 'Powerflake', '2015-12-26', 14, 0);
+INSERT INTO netflix.contents VALUES (2, 1, 3, 'Knightsmile', '2015-12-27', 14, 0);
+INSERT INTO netflix.contents VALUES (2, 1, 4, 'Stormsin', '2016-01-02', 14, 0);
+INSERT INTO netflix.contents VALUES (2, 1, 5, 'Smokey Comic', '2016-01-03', 14, 0);
+INSERT INTO netflix.contents VALUES (2, 1, 6, 'Conjured Legend', '2016-01-10', 14, 0);
+INSERT INTO netflix.contents VALUES (2, 1, 7, 'Gentle Drama', '2016-01-17', 14, 0);
+INSERT INTO netflix.contents VALUES (2, 1, 8, 'Salty Report', '2016-01-30', 14, 0);
+INSERT INTO netflix.contents VALUES (2, 1, 9, 'Anonymous Sidekick', '2016-02-21', 14, 0);
+INSERT INTO netflix.contents VALUES (2, 1, 10, 'Bitter Party', '2016-02-28', 14, 0);
+INSERT INTO netflix.contents VALUES (2, 1, 11, 'Awoken Season', '2016-03-13', 14, 0);
+INSERT INTO netflix.contents VALUES (2, 2, 1, 'Marshword', '2016-12-24', 15, 0);
+INSERT INTO netflix.contents VALUES (2, 2, 2, 'Randombash', '2016-12-31', 15, 0);
+INSERT INTO netflix.contents VALUES (2, 2, 3, 'Oceanbot', '2017-01-01', 15, 0);
+INSERT INTO netflix.contents VALUES (2, 2, 4, 'Evening Series', '2017-01-14', 15, 0);
+INSERT INTO netflix.contents VALUES (2, 2, 5, 'Ironic Comics', '2017-01-28', 15, 0);
+INSERT INTO netflix.contents VALUES (2, 2, 6, 'Smokey Myths', '2017-01-29', 15, 0);
+INSERT INTO netflix.contents VALUES (2, 2, 7, 'Mini Drama', '2017-02-05', 15, 0);
+INSERT INTO netflix.contents VALUES (2, 2, 8, 'Somber Effect', '2017-02-11', 15, 0);
+INSERT INTO netflix.contents VALUES (2, 2, 9, 'Weekend Love', '2017-02-12', 15, 0);
+INSERT INTO netflix.contents VALUES (2, 2, 10, 'Wonderful Planet', '2017-02-18', 15, 0);
+INSERT INTO netflix.contents VALUES (2, 2, 11, 'Bordershock', '2017-03-25', 15, 0);
+INSERT INTO netflix.contents VALUES (2, 3, 1, 'Hyperpiece', '2017-12-17', 13, 0);
+INSERT INTO netflix.contents VALUES (2, 3, 2, 'Werelife', '2017-12-24', 13, 0);
+INSERT INTO netflix.contents VALUES (2, 3, 3, 'Little Comics', '2017-12-31', 13, 0);
+INSERT INTO netflix.contents VALUES (2, 3, 4, 'Socially Awkward Stories', '2018-01-13', 13, 0);
+INSERT INTO netflix.contents VALUES (2, 3, 5, 'Missing Report', '2018-02-18', 13, 0);
+INSERT INTO netflix.contents VALUES (2, 3, 6, 'Married Comic', '2018-02-24', 13, 0);
+INSERT INTO netflix.contents VALUES (2, 3, 7, 'Heaven''s Journey', '2018-03-03', 13, 0);
+INSERT INTO netflix.contents VALUES (2, 3, 8, 'Emotional Realm', '2018-03-04', 13, 0);
+INSERT INTO netflix.contents VALUES (2, 3, 9, 'Costumed Spirit', '2018-03-11', 13, 0);
+INSERT INTO netflix.contents VALUES (2, 3, 10, 'Knightlock', '2018-03-17', 13, 0);
+INSERT INTO netflix.contents VALUES (2, 3, 11, 'Winterflow', '2018-03-25', 13, 0);
+INSERT INTO netflix.contents VALUES (2, 4, 1, 'Demongift', '2018-10-14', 16, 0);
+INSERT INTO netflix.contents VALUES (2, 4, 2, 'Angel Legend', '2018-12-01', 16, 0);
+INSERT INTO netflix.contents VALUES (2, 4, 3, 'Planetary Fantasy', '2018-12-08', 16, 0);
+INSERT INTO netflix.contents VALUES (2, 4, 4, 'Unrestrained Series', '2019-03-23', 16, 0);
+INSERT INTO netflix.contents VALUES (2, 4, 5, 'Princess Comics', '2019-03-30', 16, 0);
+INSERT INTO netflix.contents VALUES (2, 4, 6, 'Kawaii Night', '2019-04-07', 16, 0);
+INSERT INTO netflix.contents VALUES (2, 4, 7, 'Somber Age', '2019-05-18', 16, 0);
+INSERT INTO netflix.contents VALUES (2, 4, 8, 'Missing House', '2019-07-07', 16, 0);
+INSERT INTO netflix.contents VALUES (2, 4, 9, 'Crimsonpride', '2019-08-04', 16, 0);
+INSERT INTO netflix.contents VALUES (2, 4, 10, 'Paperyear', '2019-10-06', 16, 0);
+INSERT INTO netflix.contents VALUES (2, 4, 11, 'Randomloop', '2019-11-02', 16, 0);
+
+
+
+
+
+
+
+
+INSERT INTO netflix.directors VALUES (2, 'Shane Black');
+INSERT INTO netflix.directors VALUES (3, 'Jon Watts');
+INSERT INTO netflix.directors VALUES (4, 'Peyton Reed');
+INSERT INTO netflix.directors VALUES (5, 'Anna Boden');
+INSERT INTO netflix.directors VALUES (6, 'Anthony');
+INSERT INTO netflix.directors VALUES (7, 'Scott Derrickson');
+INSERT INTO netflix.directors VALUES (8, 'Peyton Reed');
+INSERT INTO netflix.directors VALUES (9, 'Zack Snyder');
+INSERT INTO netflix.directors VALUES (10, 'Patty Jenkins');
+INSERT INTO netflix.directors VALUES (1, 'Jon Favreau');
+
+
+
+
+
+
+
+
+INSERT INTO netflix.employee VALUES (1, 'Soham', 'Local Server Handler');
+INSERT INTO netflix.employee VALUES (2, 'Dax', 'Senior Manager ');
+INSERT INTO netflix.employee VALUES (3, 'Ruchit', 'Manager');
+INSERT INTO netflix.employee VALUES (4, 'Manthan', 'Sweeper');
+INSERT INTO netflix.employee VALUES (5, 'Vatsalya', 'Manager');
+INSERT INTO netflix.employee VALUES (6, 'Bhavik', 'Manager');
+INSERT INTO netflix.employee VALUES (7, 'Kadia', 'Manager');
+INSERT INTO netflix.employee VALUES (8, 'Rohan', 'Manager');
+INSERT INTO netflix.employee VALUES (9, 'Mann', 'Manager');
+
+
+
+
+
+
+
+
+INSERT INTO netflix.genres VALUES (1, 'Horror');
+INSERT INTO netflix.genres VALUES (2, 'Sci-Fi
+');
+INSERT INTO netflix.genres VALUES (3, 'Comedy');
+INSERT INTO netflix.genres VALUES (4, 'International
+');
+INSERT INTO netflix.genres VALUES (5, 'Stand -Up Comedy
+');
+INSERT INTO netflix.genres VALUES (6, 'Disney
+');
+INSERT INTO netflix.genres VALUES (7, 'Sports');
+INSERT INTO netflix.genres VALUES (8, 'Anime');
+INSERT INTO netflix.genres VALUES (9, 'Crime');
+INSERT INTO netflix.genres VALUES (10, 'Punjabi');
+INSERT INTO netflix.genres VALUES (11, 'Award_Winning');
+INSERT INTO netflix.genres VALUES (12, 'Thrillers');
+INSERT INTO netflix.genres VALUES (13, 'Romances');
+
+
+
+
+
+
+
+
+INSERT INTO netflix.inventory VALUES (1234, true, 1);
+INSERT INTO netflix.inventory VALUES (1235, true, 2);
+INSERT INTO netflix.inventory VALUES (1236, false, 3);
+INSERT INTO netflix.inventory VALUES (1237, false, 4);
+INSERT INTO netflix.inventory VALUES (1238, true, 5);
+INSERT INTO netflix.inventory VALUES (1239, true, 6);
+INSERT INTO netflix.inventory VALUES (1240, false, 7);
+INSERT INTO netflix.inventory VALUES (1241, true, 8);
+INSERT INTO netflix.inventory VALUES (1242, false, 9);
+INSERT INTO netflix.inventory VALUES (1243, true, 10);
+INSERT INTO netflix.inventory VALUES (1244, true, 11);
+INSERT INTO netflix.inventory VALUES (1245, true, 12);
+INSERT INTO netflix.inventory VALUES (1246, true, 13);
+INSERT INTO netflix.inventory VALUES (1247, true, 14);
+INSERT INTO netflix.inventory VALUES (1248, true, 15);
+INSERT INTO netflix.inventory VALUES (1249, false, 16);
+INSERT INTO netflix.inventory VALUES (1250, false, 17);
+INSERT INTO netflix.inventory VALUES (1251, true, 18);
+INSERT INTO netflix.inventory VALUES (1252, true, 19);
+INSERT INTO netflix.inventory VALUES (1253, false, 20);
+INSERT INTO netflix.inventory VALUES (1254, true, 21);
+INSERT INTO netflix.inventory VALUES (1255, false, 22);
+INSERT INTO netflix.inventory VALUES (1256, false, 23);
+
+
+
+
+
+
+
+
+INSERT INTO netflix.membership VALUES (1, '2019-11-01', '2020-05-01', 400, 5);
+INSERT INTO netflix.membership VALUES (2, '2019-10-10', '2020-10-10', 300, 6);
+INSERT INTO netflix.membership VALUES (3, '2019-11-01', '2020-05-01', 200, 7);
+INSERT INTO netflix.membership VALUES (0, NULL, NULL, 0, NULL);
+INSERT INTO netflix.membership VALUES (4, '2019-11-17', '2020-02-17', 400, 8);
+INSERT INTO netflix.membership VALUES (5, '2019-11-17', '2020-11-17', 300, 9);
+
+
+
+
+
+
+
+
+INSERT INTO netflix.movie_genres VALUES (1, 2);
+INSERT INTO netflix.movie_genres VALUES (1, 1);
+INSERT INTO netflix.movie_genres VALUES (1, 11);
+INSERT INTO netflix.movie_genres VALUES (2, 1);
+INSERT INTO netflix.movie_genres VALUES (2, 2);
+INSERT INTO netflix.movie_genres VALUES (3, 4);
+INSERT INTO netflix.movie_genres VALUES (3, 3);
+INSERT INTO netflix.movie_genres VALUES (4, 4);
+INSERT INTO netflix.movie_genres VALUES (4, 5);
+INSERT INTO netflix.movie_genres VALUES (5, 5);
+INSERT INTO netflix.movie_genres VALUES (5, 11);
+INSERT INTO netflix.movie_genres VALUES (5, 13);
+INSERT INTO netflix.movie_genres VALUES (6, 1);
+INSERT INTO netflix.movie_genres VALUES (6, 2);
+INSERT INTO netflix.movie_genres VALUES (6, 3);
+INSERT INTO netflix.movie_genres VALUES (7, 2);
+INSERT INTO netflix.movie_genres VALUES (8, 1);
+INSERT INTO netflix.movie_genres VALUES (9, 11);
+INSERT INTO netflix.movie_genres VALUES (10, 12);
+INSERT INTO netflix.movie_genres VALUES (11, 13);
+INSERT INTO netflix.movie_genres VALUES (12, 8);
+INSERT INTO netflix.movie_genres VALUES (13, 2);
+INSERT INTO netflix.movie_genres VALUES (14, 1);
+INSERT INTO netflix.movie_genres VALUES (15, 11);
+INSERT INTO netflix.movie_genres VALUES (16, 12);
+INSERT INTO netflix.movie_genres VALUES (17, 13);
+INSERT INTO netflix.movie_genres VALUES (18, 8);
+INSERT INTO netflix.movie_genres VALUES (19, 2);
+INSERT INTO netflix.movie_genres VALUES (20, 1);
+INSERT INTO netflix.movie_genres VALUES (21, 8);
+INSERT INTO netflix.movie_genres VALUES (22, 11);
+INSERT INTO netflix.movie_genres VALUES (23, 13);
+INSERT INTO netflix.movie_genres VALUES (24, 5);
+INSERT INTO netflix.movie_genres VALUES (24, 4);
+INSERT INTO netflix.movie_genres VALUES (24, 6);
+
+
+
+
+
+
+
+
+INSERT INTO netflix.movie_streams VALUES (4, '2019-11-08 16:07:28', 7, 2, '09:23:00');
+INSERT INTO netflix.movie_streams VALUES (4, '2019-11-08 18:50:03', 15, 2, '08:56:00');
+INSERT INTO netflix.movie_streams VALUES (1, '2019-11-08 19:29:53', 24, 2, '08:24:00');
+INSERT INTO netflix.movie_streams VALUES (2, '2019-11-08 22:03:40', 13, 3, '09:50:00');
+INSERT INTO netflix.movie_streams VALUES (4, '2019-11-08 22:42:24', 24, 3, '08:54:00');
+INSERT INTO netflix.movie_streams VALUES (4, '2019-11-09 00:15:14', 5, 3, '08:26:00');
+INSERT INTO netflix.movie_streams VALUES (2, '2019-11-09 02:15:50', 16, 2, '08:15:00');
+INSERT INTO netflix.movie_streams VALUES (1, '2019-11-09 05:02:53', 15, 1, '09:40:00');
+INSERT INTO netflix.movie_streams VALUES (4, '2019-11-09 09:01:40', 19, 3, '08:07:00');
+INSERT INTO netflix.movie_streams VALUES (1, '2019-11-09 10:50:59', 17, 2, '09:30:00');
+INSERT INTO netflix.movie_streams VALUES (4, '2019-11-09 13:44:42', 12, 2, '09:25:00');
+INSERT INTO netflix.movie_streams VALUES (2, '2019-11-09 15:24:19', 13, 1, '08:42:00');
+INSERT INTO netflix.movie_streams VALUES (4, '2019-11-09 16:27:21', 17, 3, '09:46:00');
+INSERT INTO netflix.movie_streams VALUES (4, '2019-11-10 00:38:01', 16, 2, '08:52:00');
+INSERT INTO netflix.movie_streams VALUES (3, '2019-11-10 03:57:36', 13, 2, '08:54:00');
+INSERT INTO netflix.movie_streams VALUES (3, '2019-11-10 04:08:25', 3, 2, '08:59:00');
+INSERT INTO netflix.movie_streams VALUES (4, '2019-11-10 04:25:49', 18, 2, '08:26:00');
+INSERT INTO netflix.movie_streams VALUES (4, '2019-11-10 07:55:42', 2, 3, '08:46:00');
+INSERT INTO netflix.movie_streams VALUES (4, '2019-11-10 13:56:04', 7, 3, '09:13:00');
+INSERT INTO netflix.movie_streams VALUES (1, '2019-11-10 15:26:52', 12, 2, '08:17:00');
+INSERT INTO netflix.movie_streams VALUES (4, '2019-11-10 17:08:57', 10, 2, '09:10:00');
+INSERT INTO netflix.movie_streams VALUES (2, '2019-11-10 17:17:43', 8, 1, '08:11:00');
+INSERT INTO netflix.movie_streams VALUES (3, '2019-11-10 23:50:14', 20, 2, '08:06:00');
+INSERT INTO netflix.movie_streams VALUES (2, '2019-11-11 00:48:38', 11, 2, '08:55:00');
+INSERT INTO netflix.movie_streams VALUES (2, '2019-11-11 02:58:53', 9, 3, '09:23:00');
+INSERT INTO netflix.movie_streams VALUES (1, '2019-11-11 05:48:45', 7, 1, '08:00:00');
+INSERT INTO netflix.movie_streams VALUES (2, '2019-11-11 11:33:53', 20, 2, '08:36:00');
+INSERT INTO netflix.movie_streams VALUES (1, '2019-11-11 12:29:04', 18, 2, '09:23:00');
+INSERT INTO netflix.movie_streams VALUES (4, '2019-11-11 17:10:05', 1, 3, '09:47:00');
+INSERT INTO netflix.movie_streams VALUES (1, '2019-11-11 19:04:47', 13, 2, '09:16:00');
+INSERT INTO netflix.movie_streams VALUES (3, '2019-11-11 20:05:27', 10, 2, '08:25:00');
+INSERT INTO netflix.movie_streams VALUES (2, '2019-11-11 20:59:04', 20, 3, '08:09:00');
+INSERT INTO netflix.movie_streams VALUES (3, '2019-11-11 21:52:48', 15, 1, '09:04:00');
+INSERT INTO netflix.movie_streams VALUES (3, '2019-11-11 23:51:22', 1, 3, '09:55:00');
+INSERT INTO netflix.movie_streams VALUES (2, '2019-11-12 06:08:26', 1, 2, '08:54:00');
+INSERT INTO netflix.movie_streams VALUES (4, '2019-11-12 11:29:06', 14, 1, '09:18:00');
+INSERT INTO netflix.movie_streams VALUES (3, '2019-11-12 16:00:53', 10, 3, '09:18:00');
+INSERT INTO netflix.movie_streams VALUES (1, '2019-11-12 16:47:06', 17, 2, '09:59:00');
+INSERT INTO netflix.movie_streams VALUES (4, '2019-11-12 20:10:17', 1, 1, '08:35:00');
+INSERT INTO netflix.movie_streams VALUES (1, '2019-11-12 20:54:46', 19, 2, '09:49:00');
+INSERT INTO netflix.movie_streams VALUES (1, '2019-11-12 23:54:12', 3, 1, '08:39:00');
+INSERT INTO netflix.movie_streams VALUES (4, '2019-11-13 01:09:26', 17, 3, '08:50:00');
+INSERT INTO netflix.movie_streams VALUES (4, '2019-11-13 01:51:13', 4, 1, '08:54:00');
+INSERT INTO netflix.movie_streams VALUES (4, '2019-11-13 05:43:04', 9, 3, '08:10:00');
+INSERT INTO netflix.movie_streams VALUES (2, '2019-11-13 14:01:03', 24, 1, '09:44:00');
+INSERT INTO netflix.movie_streams VALUES (1, '2019-11-13 15:25:15', 16, 3, '08:31:00');
+INSERT INTO netflix.movie_streams VALUES (2, '2019-11-13 15:46:51', 9, 1, '09:54:00');
+INSERT INTO netflix.movie_streams VALUES (1, '2019-11-13 16:42:49', 3, 1, '08:25:00');
+INSERT INTO netflix.movie_streams VALUES (2, '2019-11-13 19:08:49', 11, 3, '08:49:00');
+INSERT INTO netflix.movie_streams VALUES (4, '2019-11-13 21:44:25', 12, 2, '08:46:00');
+INSERT INTO netflix.movie_streams VALUES (1, '2019-11-07 12:56:24', 24, 3, '08:01:00');
+INSERT INTO netflix.movie_streams VALUES (1, '2019-11-15 00:00:00', 24, 2, '08:00:00');
+
+
+
+
+
+
+
+
+INSERT INTO netflix.movies VALUES (1, '1999-01-01', 'IRON MAN 1', 15, 4);
+INSERT INTO netflix.movies VALUES (2, '2000-01-02', 'Spiderman', 14, 1);
+INSERT INTO netflix.movies VALUES (5, '2007-11-11', 'Thor', 15, 1);
+INSERT INTO netflix.movies VALUES (6, '2015-03-17', 'Ant-Man', 13, 0);
+INSERT INTO netflix.movies VALUES (7, '2016-11-04', 'Doctor-Strange', 15, 3);
+INSERT INTO netflix.movies VALUES (8, '1995-01-04', 'Batman', 14, 1);
+INSERT INTO netflix.movies VALUES (9, '2019-08-03', 'Captain Marvel', 16, 3);
+INSERT INTO netflix.movies VALUES (10, '2018-01-10', 'Black Panthar', 11, 3);
+INSERT INTO netflix.movies VALUES (11, '2018-04-27', 'Avengers-Infinty Wars', 18, 2);
+INSERT INTO netflix.movies VALUES (12, '2005-03-01', 'X MAN ', 12, 3);
+INSERT INTO netflix.movies VALUES (13, '2013-03-15', 'Spider MAN 2', 16, 4);
+INSERT INTO netflix.movies VALUES (14, '2014-11-11', 'X MAN 2', 11, 1);
+INSERT INTO netflix.movies VALUES (15, '2017-11-02', 'Wonder Woman', 12, 3);
+INSERT INTO netflix.movies VALUES (16, '2016-04-01', 'Suicide Squad', 12, 3);
+INSERT INTO netflix.movies VALUES (17, '2015-02-03', 'Batman returns 2', 13, 4);
+INSERT INTO netflix.movies VALUES (18, '2005-03-01', 'THe Dark Knight  2', 18, 2);
+INSERT INTO netflix.movies VALUES (19, '2013-12-11', 'Man of Steel', 13, 2);
+INSERT INTO netflix.movies VALUES (20, '2019-03-11', 'Wonder Woman 2', 11, 3);
+INSERT INTO netflix.movies VALUES (21, '2018-12-01', 'Aquaman', 17, 0);
+INSERT INTO netflix.movies VALUES (22, '1990-12-11', 'Hulk', 14, 0);
+INSERT INTO netflix.movies VALUES (23, '2019-06-01', 'End Game', 21, 0);
+INSERT INTO netflix.movies VALUES (3, '1998-03-01', 'The Dark Knight', 14, 3);
+INSERT INTO netflix.movies VALUES (4, '2005-03-01', 'Iron MAN 2', 20, 1);
+INSERT INTO netflix.movies VALUES (24, '2010-01-01', 'ME', 11, 6);
+
+
+
+
+
+
+
+
+INSERT INTO netflix.offers VALUES (1, 1234);
+INSERT INTO netflix.offers VALUES (2, 1235);
+INSERT INTO netflix.offers VALUES (3, 1236);
+INSERT INTO netflix.offers VALUES (4, 1237);
+
+
+
+
+
+
+
+
+INSERT INTO netflix.payments VALUES (4, '2018-06-06', 'PayTM', 600, 4);
+INSERT INTO netflix.payments VALUES (6, '2019-10-10', 'PayTM', 3600, 2);
+INSERT INTO netflix.payments VALUES (1, '2016-01-01', 'PayTM
+', 2400, 1);
+INSERT INTO netflix.payments VALUES (2, '2016-01-01', 'GPay', 1200, 2);
+INSERT INTO netflix.payments VALUES (3, '2017-06-30', 'PayTM
+', 1800, 3);
+INSERT INTO netflix.payments VALUES (5, '2019-11-01', 'Debit Card
+', 2400, 1);
+INSERT INTO netflix.payments VALUES (7, '2019-11-01', 'GPay', 1200, 3);
+INSERT INTO netflix.payments VALUES (8, '2019-11-17', 'PayTM', 1200, 5);
+INSERT INTO netflix.payments VALUES (9, '2019-11-17', 'GPay', 3600, 6);
+INSERT INTO netflix.payments VALUES (10, '2019-10-11', 'Gpay', 200, 1);
+INSERT INTO netflix.payments VALUES (11, '2019-10-03', 'Debit Card', 150, 2);
+INSERT INTO netflix.payments VALUES (12, '2019-10-15', 'Paytm', 50, 3);
+INSERT INTO netflix.payments VALUES (13, '2019-10-13', 'Gpay', 300, 4);
+
+
+
+
+
+
+
+
+INSERT INTO netflix.plan VALUES (1, 'Mobile
+', 100);
+INSERT INTO netflix.plan VALUES (2, 'HD', 200);
+INSERT INTO netflix.plan VALUES (3, 'Standard', 300);
+INSERT INTO netflix.plan VALUES (4, 'Premium', 400);
+INSERT INTO netflix.plan VALUES (0, 'Free', 0);
+
+
+
+
+
+
+
+
+INSERT INTO netflix.rental_log VALUES (1, 1, 1234, '2017-03-11', '2017-03-25', 10);
+INSERT INTO netflix.rental_log VALUES (2, 2, 1235, '2017-03-11', '2017-03-18', 11);
+INSERT INTO netflix.rental_log VALUES (3, 3, 1236, '2017-03-11', '2017-03-13', 12);
+INSERT INTO netflix.rental_log VALUES (4, 4, 1237, '2017-03-11', '2017-04-11', 13);
+
+
+
+
+
+
+
+
+INSERT INTO netflix.rentals VALUES (1, '2 weeks ', 200);
+INSERT INTO netflix.rentals VALUES (2, '1 weeks', 150);
+INSERT INTO netflix.rentals VALUES (3, '2 days', 50);
+INSERT INTO netflix.rentals VALUES (4, '1 month', 300);
+INSERT INTO netflix.rentals VALUES (5, '1 month', 300);
+INSERT INTO netflix.rentals VALUES (6, '1 month', 300);
+INSERT INTO netflix.rentals VALUES (7, '1 month', 300);
+INSERT INTO netflix.rentals VALUES (8, '1 month', 300);
+INSERT INTO netflix.rentals VALUES (9, '1 month', 300);
+INSERT INTO netflix.rentals VALUES (10, '1 month', 300);
+
+
+
+
+
+
+
+
+INSERT INTO netflix.saved_cards VALUES (1, 519249659902);
+INSERT INTO netflix.saved_cards VALUES (2, 519249659902);
+INSERT INTO netflix.saved_cards VALUES (3, 519249659903);
+INSERT INTO netflix.saved_cards VALUES (4, 519249659904);
+INSERT INTO netflix.saved_cards VALUES (5, 519249659905);
+INSERT INTO netflix.saved_cards VALUES (6, 519249659906);
+
+
+
+
+
+
+
+
+INSERT INTO netflix.tv_streams VALUES (1, '2019-11-08 16:07:28', 1, 1, 1, '09:23:00', 2);
+INSERT INTO netflix.tv_streams VALUES (2, '2019-11-08 16:07:28', 2, 2, 11, '09:24:00', 1);
+INSERT INTO netflix.tv_streams VALUES (3, '2019-11-08 16:07:28', 1, 3, 5, '10:23:00', 2);
+INSERT INTO netflix.tv_streams VALUES (4, '2019-11-08 16:07:28', 2, 3, 4, '03:23:00', 1);
+INSERT INTO netflix.tv_streams VALUES (5, '2019-11-08 16:07:28', 1, 1, 2, '09:23:00', 1);
+INSERT INTO netflix.tv_streams VALUES (6, '2019-11-08 16:07:28', 2, 2, 3, '09:23:00', 1);
+
+
+
+
+
+
+
+
+INSERT INTO netflix.tvshow_genres VALUES (1, 11);
+INSERT INTO netflix.tvshow_genres VALUES (2, 11);
+INSERT INTO netflix.tvshow_genres VALUES (3, 2);
+INSERT INTO netflix.tvshow_genres VALUES (4, 1);
+INSERT INTO netflix.tvshow_genres VALUES (5, 8);
+INSERT INTO netflix.tvshow_genres VALUES (6, 11);
+INSERT INTO netflix.tvshow_genres VALUES (1, 2);
+INSERT INTO netflix.tvshow_genres VALUES (2, 1);
+INSERT INTO netflix.tvshow_genres VALUES (3, 8);
+INSERT INTO netflix.tvshow_genres VALUES (4, 4);
+INSERT INTO netflix.tvshow_genres VALUES (5, 11);
+INSERT INTO netflix.tvshow_genres VALUES (6, 2);
+
+
+
+
+
+
+
+
+INSERT INTO netflix.tvshows VALUES (1, 'FRIENDS', 2000, 2008);
+INSERT INTO netflix.tvshows VALUES (2, 'TBBT', 2015, 2025);
+INSERT INTO netflix.tvshows VALUES (3, 'Suits', 2007, 2020);
+INSERT INTO netflix.tvshows VALUES (4, 'Mirzapur', 2018, 2019);
+INSERT INTO netflix.tvshows VALUES (5, 'InsideEdge', 2016, 2017);
+INSERT INTO netflix.tvshows VALUES (6, 'The Mentalist', 2010, 2016);
+
+
+
+
+
+
+INSERT INTO netflix.user_genres VALUES (1, 3);
+INSERT INTO netflix.user_genres VALUES (1, 4);
+INSERT INTO netflix.user_genres VALUES (1, 5);
+INSERT INTO netflix.user_genres VALUES (2, 1);
+INSERT INTO netflix.user_genres VALUES (2, 3);
+INSERT INTO netflix.user_genres VALUES (2, 2);
+INSERT INTO netflix.user_genres VALUES (3, 4);
+INSERT INTO netflix.user_genres VALUES (3, 5);
+INSERT INTO netflix.user_genres VALUES (4, 1);
+INSERT INTO netflix.user_genres VALUES (4, 5);
+
+
